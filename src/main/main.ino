@@ -1,55 +1,92 @@
+#include <Stepper.h>
+
+#include <IRremote.hpp>
+#include "IRremote.h"
 #include <SR04.h>
 #include "SR04.h"
 
-/* Define the pin numbers */
-#define GREEN 3
-#define BLUE 4
-#define RED 2
-#define BUZZER 12
-#define TRIG 9
-#define ECHO 8
+#include "pins.h"
+#include "IRcodes.h"
 
-// create an object of the sonar sensor class
+IRrecv irrecv(RECIEVER);
 SR04 sonar = SR04(ECHO,TRIG); 
+Stepper stepper(1000, stepper_pins[0], stepper_pins[1], stepper_pins[2], stepper_pins[3]);
 
 unsigned long dist;
-int targetDist = 10;
+
+const int rolePerMin = 15;
+const int stepsPerRevolution = 1000;
+int stepperAngle = 0;
+
+bool power = false;
+uint32_t lastDecodedIR = 0;
 
 void setup() {
 
+  stepper.setSpeed(rolePerMin);
   Serial.begin(9600);
-
-  pinMode(RED, OUTPUT);
-  pinMode(BLUE, OUTPUT);
-  pinMode(GREEN, OUTPUT);
+  irrecv.enableIRIn();
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
   pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
-
 }
 
-void checkObj(unsigned long distance)
-{
+void stop(int stepperAngle){
 
-  /*
-    green needs to be turned off if red is being turned on,
-    if not then the colors will mix and the RGB led will become yellow
-  */
-  if(distance <= targetDist){   //checks if a object is less than or equial to target_dist Cm close
-    digitalWrite(RED, HIGH);
-    digitalWrite(GREEN, LOW);
-    digitalWrite(BUZZER, HIGH);
+  if (stepperAngle != 0)
+  {
+    while(stepperAngle != 0)
+    {
+      Serial.println(stepperAngle);
+      stepperAngle--;
+      stepper.step(-3);
+    }
   }
-  else{
-    digitalWrite(GREEN, HIGH);
-    digitalWrite(RED, LOW);
-    digitalWrite(BUZZER, LOW);
+}
+
+
+void start(int stepperAngle){
+
+  Serial.println("starting");
+
+  for(int i = 0; i <= 180; i++)
+  {
+    stepperAngle++;
+    stepper.step(6);
   }
+  for(int i = 0; i <= 180; i++)
+  {
+    stepperAngle--;
+    stepper.step(-6);
+  }
+
 }
 
 void loop() {
-  dist = sonar.Distance();
-  checkObj(dist);
-  Serial.print(dist);
-  Serial.println(" cm");
+  
+  if(irrecv.decode())
+  {
+    if(irrecv.decodedIRData.decodedRawData == POWER && lastDecodedIR == 0)
+    {
+      power = true;
+      lastDecodedIR = irrecv.decodedIRData.decodedRawData;
+    }
+    else if(irrecv.decodedIRData.decodedRawData == POWER && lastDecodedIR == POWER)
+    {
+      power = false;
+      lastDecodedIR = 0;
+      Serial.println('OFF');
+    }
+    irrecv.resume();
+  }
+
+  if(power)
+  {
+    start(stepperAngle);
+  }
+  else if(!power)
+  {
+    stop(stepperAngle);
+  }
 
 }

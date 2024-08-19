@@ -1,5 +1,5 @@
-#define RED_LED 13
-#define GREEN_LED 12
+#include "pins.h"
+
 #define BUZZER 11
 #define RECIEVER 10
 #define ECHO 9

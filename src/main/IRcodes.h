@@ -1,0 +1,11 @@
+#ifndef IRCODES_H
+#define IRCODES_H
+
+#define POWER 0xBA45FF00
+#define FAST_FORWARD 0xBC43FF00
+#define FAST_BACK 0xBB44FF00
+#define VOL_UP 0xB946FF00
+#define VOL_DOWN 0xEA15FF00
+#define OFF 0xE916FF00
+
+#endif
