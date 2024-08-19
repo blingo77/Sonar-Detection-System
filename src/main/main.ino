@@ -8,6 +8,8 @@
 #include "pins.h"
 #include "IRcodes.h"
 
+#include "sonarCheck.hpp"
+
 IRrecv irrecv(RECIEVER);
 SR04 sonar = SR04(ECHO,TRIG); 
 Stepper stepper(1000, stepper_pins[0], stepper_pins[1], stepper_pins[2], stepper_pins[3]);
@@ -31,7 +33,17 @@ void setup() {
   pinMode(BUZZER, OUTPUT);
 }
 
+void checkForObj(unsigned long* dist){
+  *dist = sonar.Distance();
+  Serial.print(*dist) ;
+  Serial.println("CM");
+  
+}
+
 void stop(int stepperAngle){
+
+  digitalWrite(RED_LED, LOW);
+  digitalWrite(GREEN_LED, LOW);
 
   if (stepperAngle != 0)
   {
@@ -44,19 +56,20 @@ void stop(int stepperAngle){
   }
 }
 
-
-void start(int stepperAngle){
+void start(int stepperAngle, unsigned long dist){
 
   Serial.println("starting");
 
   for(int i = 0; i <= 180; i++)
   {
     stepperAngle++;
+    checkForObj(&dist);
     stepper.step(6);
   }
   for(int i = 0; i <= 180; i++)
   {
     stepperAngle--;
+    checkForObj(&dist);
     stepper.step(-6);
   }
 
@@ -82,7 +95,7 @@ void loop() {
 
   if(power)
   {
-    start(stepperAngle);
+    start(stepperAngle, dist);
   }
   else if(!power)
   {
