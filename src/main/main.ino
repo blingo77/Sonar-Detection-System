@@ -16,7 +16,7 @@ Stepper stepper(1000, stepper_pins[0], stepper_pins[1], stepper_pins[2], stepper
 
 unsigned long dist;
 
-const int rolePerMin = 15;
+const int rolePerMin = 15;              // how fast the stepper motor turns
 const int stepsPerRevolution = 1000;
 int stepperAngle = 0;
 
@@ -33,11 +33,27 @@ void setup() {
   pinMode(BUZZER, OUTPUT);
 }
 
-void checkForObj(unsigned long* dist){
+void checkForObj(unsigned long* dist, int angle){
   *dist = sonar.Distance();
-  Serial.print(*dist) ;
-  Serial.println("CM");
-  
+
+  if(*dist < TARGET_RANGE)
+  {
+    digitalWrite(RED_LED, HIGH);
+    digitalWrite(GREEN_LED, LOW);
+
+    Serial.println("####OBJECT IN RANGE####");
+    Serial.print("Distance (CM): ");
+    Serial.println( *dist);
+    Serial.print("Angle: ");
+    Serial.println(angle);
+
+  }
+  else
+  {
+    digitalWrite(RED_LED, LOW);
+    digitalWrite(GREEN_LED, HIGH);   
+  }
+
 }
 
 void stop(int stepperAngle){
@@ -63,13 +79,13 @@ void start(int stepperAngle, unsigned long dist){
   for(int i = 0; i <= 180; i++)
   {
     stepperAngle++;
-    checkForObj(&dist);
+    checkForObj(&dist, stepperAngle);
     stepper.step(6);
   }
   for(int i = 0; i <= 180; i++)
   {
     stepperAngle--;
-    checkForObj(&dist);
+    checkForObj(&dist, stepperAngle);
     stepper.step(-6);
   }
 
@@ -88,7 +104,7 @@ void loop() {
     {
       power = false;
       lastDecodedIR = 0;
-      Serial.println('OFF');
+      Serial.println("OFF");
     }
     irrecv.resume();
   }
